@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fancy Footwork Admin Panel</title>
+
+  <!-- Bootstrap + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Optional custom admin styles (create admin.css or remove this line) -->
+  <link rel="stylesheet" href="admin.css">
+
+  <style>
+    /* Minimal inline styles to keep layout usable if admin.css missing */
+    body { min-height:100vh; display:flex; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+    .sidebar { width: 220px; background:#111827; color:#fff; padding: 1rem; min-height:100vh; }
+    .sidebar .logo img{ width: 100%; object-fit:contain; }
+    .sidebar .nav-link { color: #d1d5db; display:flex; gap:.5rem; align-items:center; padding:.5rem 0; text-decoration:none; }
+    .sidebar .nav-link.active{ color:#fff; font-weight:600; }
+    .main-content { flex:1; padding:1.25rem; background:#f8fafc; }
+    .summary-card { display:flex; gap:1rem; padding:1rem; border-radius:.5rem; color:#fff; align-items:center; }
+    .summary-card .icon { font-size:1.6rem; opacity:.9; }
+    .products-grid { display:block; }
+    .avatar { width:34px; height:34px; border-radius:50%; object-fit:cover; }
+    .low-stock-list li { display:flex; justify-content:space-between; padding:.25rem 0; }
+    table img { width:60px; height:60px; object-fit:cover; border-radius:.25rem; }
+    .btn-sm { padding: .25rem .5rem; font-size:.8rem; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <nav class="sidebar d-flex flex-column">
+    <div class="logo">
+      <div class="logo-bg mb-3">
+        <img src="fancyfootworklogo.png" alt="Fancy Footwork Logo" onerror="this.style.display='none'">
+      </div>
+    </div>
+    <ul class="nav flex-column mt-3">
+      <li><a class="nav-link active" href="#" onclick="showSection('dashboard')"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a></li>
+      <li><a class="nav-link" href="#" onclick="showSection('products')"><i class="bi bi-box-seam"></i><span>Products</span></a></li>
+      <li><a class="nav-link" href="#" onclick="showSection('orders')"><i class="bi bi-cart-check"></i><span>Orders</span></a></li>
+      <li><a class="nav-link" href="#" onclick="showSection('customers')"><i class="bi bi-people"></i><span>Customers</span></a></li>
+      <li><a class="nav-link" href="#" onclick="showSection('reports')"><i class="bi bi-bar-chart"></i><span>Reports</span></a></li>
+      <li><a class="nav-link" href="#" onclick="showSection('settings')"><i class="bi bi-gear"></i><span>Settings</span></a></li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-expand-lg mb-4">
+      <div class="container-fluid px-0">
+        <span class="navbar-brand">Dashboard</span>
+        <form class="d-none d-md-flex mx-auto search-bar" onsubmit="event.preventDefault();">
+          <input class="form-control rounded-pill" id="globalSearch" type="search" placeholder="Search products..." aria-label="Search" oninput="searchProducts(this.value)">
+        </form>
+        <div class="d-flex align-items-center">
+          <i class="bi bi-bell me-3"></i>
+          <div class="dropdown">
+            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="adminDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/icons/person-circle.svg" alt="Admin" class="avatar me-2">
+              <span class="d-none d-md-inline">Admin</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+              <li><a class="dropdown-item" href="#">Profile</a></li>
+              <li><a class="dropdown-item" href="#">Settings</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" onclick="signOut()">Logout</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Dashboard Section -->
+    <div id="dashboardSection">
+      <div class="row mb-4 gx-3">
+        <div class="col-md-3 col-6 mb-3">
+          <div class="summary-card bg-primary">
+            <span class="icon"><i class="bi bi-box-seam"></i></span>
+            <div>
+              <div class="card-title">Total Products</div>
+              <div class="card-value fs-4" id="totalProducts">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+          <div class="summary-card bg-success">
+            <span class="icon"><i class="bi bi-cart-check"></i></span>
+            <div>
+              <div class="card-title">Total Orders</div>
+              <div class="card-value fs-4" id="totalOrders">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+          <div class="summary-card bg-warning">
+            <span class="icon"><i class="bi bi-people"></i></span>
+            <div>
+              <div class="card-title">Customers</div>
+              <div class="card-value fs-4" id="totalCustomers">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+          <div class="summary-card bg-danger">
+            <span class="icon"><i class="bi bi-currency-peso"></i></span>
+            <div>
+              <div class="card-title">Total Sales</div>
+              <div class="card-value fs-4" id="totalSales">₱0.00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mb-4 gx-3">
+        <div class="col-lg-8 mb-4 mb-lg-0">
+          <div class="card p-3">
+            <h5 class="mb-3">Monthly Sales (sample)</h5>
+            <canvas id="salesChart" height="120"></canvas>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card p-3">
+            <h5 class="mb-3">Orders by Category (sample)</h5>
+            <canvas id="categoryChart" height="120"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="mb-3">Low Stock Products</h5>
+          <ul class="low-stock-list" id="lowStockList">
+            <li><span>-</span><span class="badge bg-secondary">0 left</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Products Section -->
+    <div id="productsSection" style="display:none;">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5>Products</h5>
+          <button class="btn btn-primary mb-2" type="button" data-bs-toggle="modal" data-bs-target="#addProductModal">Add Product</button>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead><tr><th>ID</th><th>Preview</th><th>Name</th><th>Stock</th><th>Price</th><th>Actions</th></tr></thead>
+              <tbody id="productsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders Section -->
+    <div id="ordersSection" style="display:none;">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5>Orders</h5>
+          <input type="text" id="orderIdInput" placeholder="Enter Order ID">
+          <button class="btn btn-info" onclick="checkOrderStatus()">Check Status</button>
+          <div class="table-responsive mt-3">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Customer</th>
+                  <th>Status</th>
+                  <th>Quantity</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customers Section -->
+    <div id="customersSection" style="display:none;">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5>Customers</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered">
+              <thead><tr><th>Name</th><th>Email</th></tr></thead>
+              <tbody id="customersTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reports Section -->
+    <div id="reportsSection" style="display:none;">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5>Reports</h5>
+          <canvas id="reportsChart" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Section -->
+    <div id="settingsSection" style="display:none;">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5>Settings</h5>
+          <input type="text" id="usernameInput" class="form-control mb-2" placeholder="Username">
+          <input type="email" id="emailInput" class="form-control mb-2" placeholder="Email">
+          <input type="password" id="passwordInput" class="form-control mb-2" placeholder="Password">
+          <button class="btn btn-success" onclick="updateAccount()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addProductModalLabel">Add New Product</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addProductForm">
+            <div class="mb-3">
+              <label for="productId" class="form-label">Product ID (optional)</label>
+              <input type="text" class="form-control" id="productId" placeholder="Leave empty to auto-generate">
+            </div>
+            <div class="mb-3">
+              <label for="productName" class="form-label">Product Name</label>
+              <input type="text" class="form-control" id="productName" required>
+            </div>
+            <div class="mb-3">
+              <label for="productDescription" class="form-label">Description</label>
+              <textarea class="form-control" id="productDescription" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="productPrice" class="form-label">Price</label>
+              <input type="number" class="form-control" id="productPrice" required>
+            </div>
+            <div class="mb-3">
+              <label for="productStock" class="form-label">Stock</label>
+              <input type="number" class="form-control" id="productStock" value="1" required>
+            </div>
+            <div class="mb-3">
+              <label for="productImage" class="form-label">Product Image (.jpg or .png)</label>
+              <input type="file" class="form-control" id="productImage" accept=".jpg,.png,.jpeg" required>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="addProductBtn">Add Product</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Product Modal -->
+  <div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editProductModalLabel">Edit Product</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editProductForm">
+            <div class="mb-3">
+              <label for="editProductId" class="form-label">Product ID</label>
+              <input type="text" class="form-control" id="editProductId" readonly>
+            </div>
+            <div class="mb-3">
+              <label for="editProductName" class="form-label">Product Name</label>
+              <input type="text" class="form-control" id="editProductName" required>
+            </div>
+            <div class="mb-3">
+              <label for="editProductDescription" class="form-label">Description</label>
+              <textarea class="form-control" id="editProductDescription" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="editProductPrice" class="form-label">Price</label>
+              <input type="number" class="form-control" id="editProductPrice" required>
+            </div>
+            <div class="mb-3">
+              <label for="editProductStock" class="form-label">Stock</label>
+              <input type="number" class="form-control" id="editProductStock" required>
+            </div>
+            <div class="mb-3">
+              <label for="editProductImage" class="form-label">Product Image (.jpg or .png) - leave empty to keep current</label>
+              <input type="file" class="form-control" id="editProductImage" accept=".jpg,.png,.jpeg">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="saveEditBtn">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap + Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Supabase + Admin logic -->
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    // ---------- CONFIG ----------
+    const SUPABASE_URL = "https://jjedekkkiddcsirqidvt.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqZWRla2traWRkY3NpcnFpZHZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2Njk0ODgsImV4cCI6MjA3NjI0NTQ4OH0.wTP8mjZL-tEGV6irIN9WpZRAyoDtEG4uaFMkSFo5lds";
+    const bucketName = "product-images"; // bucket to use (create it in Supabase Storage as public)
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // UI refs
+    const productsTableBody = document.getElementById('productsTableBody');
+    const totalProductsEl = document.getElementById('totalProducts');
+    const totalOrdersEl = document.getElementById('totalOrders');
+    const totalCustomersEl = document.getElementById('totalCustomers');
+    const totalSalesEl = document.getElementById('totalSales');
+    const lowStockList = document.getElementById('lowStockList');
+
+    // Keep an in-memory cache of products
+    let productsCache = [];
+
+    // ---------- UTIL ----------
+    function formatCurrency(n) {
+      return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function showSection(key) {
+      const map = {
+        dashboard: 'dashboardSection',
+        products: 'productsSection',
+        orders: 'ordersSection',
+        customers: 'customersSection',
+        reports: 'reportsSection',
+        settings: 'settingsSection'
+      };
+      Object.values(map).forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
+      document.getElementById(map[key]).style.display = 'block';
+    }
+
+    // ---------- PRODUCT CRUD ----------
+    async function fetchProducts() {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        productsCache = data || [];
+        renderProducts(productsCache);
+        updateDashboard(productsCache);
+      } catch (err) {
+        console.error('Error fetching products:', err.message || err);
+        alert('Failed to load products. Open console for details.');
+      }
+    }
+
+    function renderProducts(list) {
+      productsTableBody.innerHTML = '';
+      if (!list.length) {
+        productsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">No products yet</td></tr>';
+        return;
+      }
+
+      list.forEach(p => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>${p.id}</td>
+          <td><img src="${p.image_url || ''}" alt="${escapeHtml(p.name || '')}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'"></td>
+          <td>${escapeHtml(p.name || '')}</td>
+          <td>${Number(p.stock || 0)}</td>
+          <td>${formatCurrency(p.price || 0)}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal(${p.id})">Edit</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${p.id})">Delete</button>
+          </td>
+        `;
+        productsTableBody.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/[&<>"'`=\/]/g, function(s) {
+        return ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+          '/': '&#x2F;',
+          '`': '&#x60;',
+          '=': '&#x3D;'
+        })[s];
+      });
+    }
+
+    async function uploadImageFile(file) {
+      if (!file) return null;
+      const fileExt = file.name.split('.').pop();
+      const safeName = `${Date.now()}-${Math.random().toString(36).slice(2,9)}.${fileExt}`;
+      const filePath = `uploads/${safeName}`;
+
+      // upload
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+      if (error) {
+        // If bucket doesn't exist or forbidden, surface message
+        console.error('Upload error:', error);
+        throw new Error(error.message || 'Upload failed');
+      }
+
+      // get public URL
+      const { data: urlData } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+      return urlData?.publicUrl || null;
+    }
+
+    async function addProduct() {
+      const name = document.getElementById('productName').value.trim();
+      const description = document.getElementById('productDescription').value.trim();
+      const price = parseFloat(document.getElementById('productPrice').value);
+      const stock = parseInt(document.getElementById('productStock').value, 10) || 0;
+      const fileInput = document.getElementById('productImage');
+      const file = fileInput.files[0];
+
+      if (!name || !description || !price || !file) {
+        alert('Please fill all required fields and select an image.');
+        return;
+      }
+
+      try {
+        // upload image
+        const imageUrl = await uploadImageFile(file);
+
+        // insert product
+        const { data, error } = await supabase
+          .from('products')
+          .insert([{ name, description, price, stock, image_url: imageUrl }])
+          .select().single();
+
+        if (error) throw error;
+
+        // close modal & reset
+        const addModal = bootstrap.Modal.getInstance(document.getElementById('addProductModal'));
+        if (addModal) addModal.hide();
+        document.getElementById('addProductForm').reset();
+
+        // update UI immediately
+        productsCache.unshift(data);
+        renderProducts(productsCache);
+        updateDashboard(productsCache);
+
+        alert('Product added successfully!');
+      } catch (err) {
+        console.error('Add product failed:', err);
+        alert('Failed to add product: ' + (err.message || err));
+      }
+    }
+
+    async function openEditModal(id) {
+      const product = productsCache.find(p => Number(p.id) === Number(id));
+      if (!product) { alert('Product not found'); return; }
+
+      document.getElementById('editProductId').value = product.id;
+      document.getElementById('editProductName').value = product.name;
+      document.getElementById('editProductDescription').value = product.description;
+      document.getElementById('editProductPrice').value = product.price;
+      document.getElementById('editProductStock').value = product.stock;
+
+      const editModal = new bootstrap.Modal(document.getElementById('editProductModal'));
+      editModal.show();
+    }
+
+    async function editProduct() {
+      const id = document.getElementById('editProductId').value;
+      const name = document.getElementById('editProductName').value.trim();
+      const description = document.getElementById('editProductDescription').value.trim();
+      const price = parseFloat(document.getElementById('editProductPrice').value);
+      const stock = parseInt(document.getElementById('editProductStock').value, 10) || 0;
+      const fileInput = document.getElementById('editProductImage');
+      const file = fileInput.files[0];
+
+      if (!name || !description || !price) {
+        alert('Please fill required fields.');
+        return;
+      }
+
+      try {
+        let image_url = null;
+        if (file) {
+          image_url = await uploadImageFile(file);
+        }
+
+        const updateData = { name, description, price, stock };
+        if (image_url) updateData.image_url = image_url;
+
+        const { data, error } = await supabase
+          .from('products')
+          .update(updateData)
+          .eq('id', id)
+          .select().single();
+
+        if (error) throw error;
+
+        // update cache & UI
+        productsCache = productsCache.map(p => p.id === data.id ? data : p);
+        renderProducts(productsCache);
+        updateDashboard(productsCache);
+
+        const editModal = bootstrap.Modal.getInstance(document.getElementById('editProductModal'));
+        if (editModal) editModal.hide();
+
+        document.getElementById('editProductForm').reset();
+        alert('Product updated!');
+      } catch (err) {
+        console.error('Edit product failed:', err);
+        alert('Failed to update product: ' + (err.message || err));
+      }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Delete this product?')) return;
+      try {
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) throw error;
+        productsCache = productsCache.filter(p => Number(p.id) !== Number(id));
+        renderProducts(productsCache);
+        updateDashboard(productsCache);
+        alert('Deleted.');
+      } catch (err) {
+        console.error('Delete failed:', err);
+        alert('Failed to delete: ' + (err.message || err));
+      }
+    }
+
+    // ---------- DASHBOARD UPDATES ----------
+    function updateDashboard(list) {
+      totalProductsEl.textContent = list.length || 0;
+      // For demo, totalOrders and totalCustomers are placeholders (fetch from your orders/users tables if exist)
+      totalOrdersEl.textContent = '0';
+      totalCustomersEl.textContent = '0';
+
+      const totalSales = (list || []).reduce((sum, p) => sum + (Number(p.price || 0) * Number(p.stock || 0)), 0);
+      totalSalesEl.textContent = formatCurrency(totalSales);
+
+      // Low stock
+      const low = list.filter(p => Number(p.stock || 0) <= 3).slice(0, 6);
+      lowStockList.innerHTML = '';
+      if (!low.length) {
+        lowStockList.innerHTML = '<li><span>No low-stock items</span><span class="badge bg-secondary">0 left</span></li>';
+      } else {
+        low.forEach(p => {
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${escapeHtml(p.name)}</span><span class="badge bg-danger">${p.stock} left</span>`;
+          lowStockList.appendChild(li);
+        });
+      }
+    }
+
+    // ---------- SEARCH ----------
+    function searchProducts(q) {
+      q = (q || '').toLowerCase().trim();
+      if (!q) return renderProducts(productsCache);
+      const filtered = productsCache.filter(p => {
+        return (p.name||'').toLowerCase().includes(q) || (p.description||'').toLowerCase().includes(q);
+      });
+      renderProducts(filtered);
+    }
+
+    // ---------- ORDERS & CUSTOMERS (placeholders) ----------
+    function checkOrderStatus() {
+      const id = document.getElementById('orderIdInput').value.trim();
+      alert('Order check is not implemented in this demo. Order ID: ' + id);
+    }
+
+    // ---------- AUTH (optional small helpers) ----------
+    async function signOut() {
+      try {
+        await supabase.auth.signOut();
+        alert('Signed out (if you were signed in).');
+      } catch (err) {
+        console.warn('Sign out err', err);
+      }
+    }
+
+    // ---------- Realtime subscription for products table ----------
+    function subscribeToProducts() {
+      try {
+        // using postgres_changes style subscription
+        supabase.channel('public:products')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, payload => {
+            // payload contains {eventType, new, old}
+            // keep simple: re-fetch the list (ensures cache consistency)
+            fetchProducts();
+          })
+          .subscribe();
+      } catch (err) {
+        console.warn('Realtime subscribe error', err);
+      }
+    }
+
+    // ---------- helpers to wire UI ----------
+    document.getElementById('addProductBtn').addEventListener('click', addProduct);
+    document.getElementById('saveEditBtn').addEventListener('click', editProduct);
+
+    // initialize charts with sample data (you can replace with real data later)
+    function initCharts() {
+      const salesCtx = document.getElementById('salesChart').getContext('2d');
+      new Chart(salesCtx, {
+        type: 'line',
+        data: {
+          labels: ['Jan','Feb','Mar','Apr','May','Jun'],
+          datasets: [{ label:'Sales', data:[1200,1500,1000,1800,1700,2200], tension:0.3 }]
+        },
+        options: { responsive:true, plugins:{ legend:{display:false} } }
+      });
+
+      const catCtx = document.getElementById('categoryChart').getContext('2d');
+      new Chart(catCtx, {
+        type: 'doughnut',
+        data: { labels:['Featured','Lifestyle','Sports'], datasets:[{ data:[30,40,30] }] },
+        options: { responsive:true, plugins:{ legend:{position:'bottom'} } }
+      });
+    }
+
+    // ---------- Page startup ----------
+    (async function init() {
+      // Default visible section
+      showSection('dashboard');
+
+      // Try to fetch products
+      await fetchProducts();
+      initCharts();
+      subscribeToProducts();
+    })();
+
+    // expose some functions to global for inline onclick usage
+    window.openEditModal = openEditModal;
+    window.deleteProduct = deleteProduct;
+    window.showSection = (key) => {
+      // map friendly names used in sidebar to our internal keys
+      switch (key) {
+        case 'dashboard': showSection('dashboard'); break;
+        case 'products': showSection('products'); break;
+        case 'orders': showSection('orders'); break;
+        case 'customers': showSection('customers'); break;
+        case 'reports': showSection('reports'); break;
+        case 'settings': showSection('settings'); break;
+        default: showSection('dashboard');
+      }
+    };
+    window.searchProducts = searchProducts;
+  </script>
+</body>
+</html>
